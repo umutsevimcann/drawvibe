@@ -1,12 +1,12 @@
 /**
- * Canvas işlemleri ve çizim fonksiyonlarını içeren modül
+ * Module containing canvas operations and drawing functions
  */
 class DrawingCanvas {
   constructor() {
     this.canvas = document.getElementById('drawing-canvas');
     this.ctx = this.canvas.getContext('2d');
     
-    // Geçici çizim için ikinci canvas
+    // Second canvas for temporary drawing
     this.tempCanvas = document.getElementById('temp-canvas');
     this.tempCtx = this.tempCanvas.getContext('2d');
     
@@ -18,31 +18,31 @@ class DrawingCanvas {
     this.startX = 0;
     this.startY = 0;
     
-    // Çizim aracı
+    // Drawing tool
     this.currentTool = 'brush';
     
-    // Geçmiş yönetimi için
+    // For history management
     this.history = [];
     this.currentStep = -1;
-    this.maxHistorySteps = 20; // Maksimum kayıt adımı
-    this.shouldRecordHistory = true; // Geriye alırken kayıt kontrol bayrağı
+    this.maxHistorySteps = 20; // Maximum record steps
+    this.shouldRecordHistory = true; // Record control flag when undoing
     
-    // Canvas boyutunu ayarla
+    // Set canvas size
     this.resizeCanvas();
     
-    // Mevcut durumu kaydet
+    // Save current state
     this.saveCurrentState();
     
-    // Olay dinleyicileri
+    // Event listeners
     window.addEventListener('resize', () => this.resizeCanvas());
     
-    // Çizim olayları
+    // Drawing events
     this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
     this.canvas.addEventListener('mousemove', (e) => this.draw(e));
     this.canvas.addEventListener('mouseup', () => this.stopDrawing());
     this.canvas.addEventListener('mouseout', () => this.stopDrawing());
     
-    // Dokunmatik cihaz desteği
+    // Touch device support
     this.canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
       const touch = e.touches[0];
@@ -69,15 +69,15 @@ class DrawingCanvas {
       this.canvas.dispatchEvent(mouseEvent);
     });
     
-    // Klavye kısayolları
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + Z: Geri Al
+      // Ctrl/Cmd + Z: Undo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
         this.undo();
       }
       
-      // Ctrl/Cmd + Y: Yeniden Yap veya Ctrl/Cmd + Shift + Z
+      // Ctrl/Cmd + Y: Redo or Ctrl/Cmd + Shift + Z
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
         e.preventDefault();
         this.redo();
@@ -85,7 +85,7 @@ class DrawingCanvas {
     });
   }
   
-  // Canvas boyutunu pencereye göre ayarla
+  // Adjust canvas size according to window
   resizeCanvas() {
     const container = this.canvas.parentElement;
     this.canvas.width = container.clientWidth;
@@ -93,7 +93,7 @@ class DrawingCanvas {
     this.tempCanvas.width = container.clientWidth;
     this.tempCanvas.height = container.clientHeight;
     
-    // Yeniden boyutlandırdıktan sonra mevcut durumu çiz
+    // Draw current state after resizing
     if (this.currentStep >= 0 && this.history[this.currentStep]) {
       const tempImage = new Image();
       tempImage.src = this.history[this.currentStep];
@@ -104,11 +104,11 @@ class DrawingCanvas {
     }
   }
   
-  // Aracı değiştir
+  // Change tool
   setTool(tool) {
     this.currentTool = tool;
     
-    // İmleç stilini ayarla
+    // Set cursor style
     switch (tool) {
       case 'brush':
         this.canvas.style.cursor = 'crosshair';
@@ -126,26 +126,26 @@ class DrawingCanvas {
     }
   }
   
-  // Mevcut canvas durumunu kaydet
+  // Save current canvas state
   saveCurrentState() {
     if (!this.shouldRecordHistory) return;
     
-    // Eğer geçmiş adımlarının ortasındaysak, ileri adımları sil
+    // If we're in the middle of history steps, delete forward steps
     if (this.currentStep < this.history.length - 1) {
       this.history = this.history.slice(0, this.currentStep + 1);
     }
     
-    // Geçmişe ekle
+    // Add to history
     this.currentStep++;
     this.history.push(this.canvas.toDataURL());
     
-    // Geçmiş sınırını aşarsa en eski adımı sil
+    // Delete oldest step if history limit is exceeded
     if (this.history.length > this.maxHistorySteps) {
       this.history.shift();
       this.currentStep--;
     }
     
-    // Eğer geçmiş değiştiyse, bildirim yap
+    // Notify if history has changed
     if (typeof this.onHistoryChange === 'function') {
       this.onHistoryChange({
         canUndo: this.canUndo(),
@@ -153,7 +153,7 @@ class DrawingCanvas {
       });
     }
     
-    // Canvas güncellendiğinde
+    // When canvas is updated
     if (typeof this.onCanvasUpdated === 'function') {
       this.onCanvasUpdated({
         type: 'stateChange',
@@ -162,17 +162,17 @@ class DrawingCanvas {
     }
   }
   
-  // Geri alma işlemi yapılabilir mi?
+  // Can undo operation be performed?
   canUndo() {
     return this.currentStep > 0;
   }
   
-  // Yeniden yapma işlemi yapılabilir mi?
+  // Can redo operation be performed?
   canRedo() {
     return this.currentStep < this.history.length - 1;
   }
   
-  // Geri al
+  // Undo
   undo() {
     if (!this.canUndo()) return false;
     
@@ -181,7 +181,7 @@ class DrawingCanvas {
     this.loadImageFromHistory();
     this.shouldRecordHistory = true;
     
-    // Bildirim yap
+    // Notify
     if (typeof this.onHistoryChange === 'function') {
       this.onHistoryChange({
         canUndo: this.canUndo(),
@@ -192,7 +192,7 @@ class DrawingCanvas {
     return true;
   }
   
-  // Yeniden yap
+  // Redo
   redo() {
     if (!this.canRedo()) return false;
     
@@ -201,7 +201,7 @@ class DrawingCanvas {
     this.loadImageFromHistory();
     this.shouldRecordHistory = true;
     
-    // Bildirim yap
+    // Notify
     if (typeof this.onHistoryChange === 'function') {
       this.onHistoryChange({
         canUndo: this.canUndo(),
@@ -212,7 +212,7 @@ class DrawingCanvas {
     return true;
   }
   
-  // Geçmişten görüntüyü yükle
+  // Load image from history
   loadImageFromHistory() {
     if (this.currentStep >= 0 && this.history[this.currentStep]) {
       const tempImage = new Image();
@@ -221,7 +221,7 @@ class DrawingCanvas {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(tempImage, 0, 0);
         
-        // Uzak kullanıcıları bilgilendir
+        // Notify remote users
         if (typeof this.onCanvasUpdated === 'function') {
           this.onCanvasUpdated({
             type: 'historyChange',
@@ -233,7 +233,7 @@ class DrawingCanvas {
     }
   }
   
-  // Çizim başlat
+  // Start drawing
   startDrawing(e) {
     this.isDrawing = true;
     const rect = this.canvas.getBoundingClientRect();
@@ -244,7 +244,7 @@ class DrawingCanvas {
     
     switch (this.currentTool) {
       case 'brush':
-        // Çizim başladığında nokta çiz
+        // Draw point when drawing starts
         this.ctx.beginPath();
         this.ctx.fillStyle = this.brushColor;
         this.ctx.arc(this.lastX, this.lastY, this.brushSize / 2, 0, Math.PI * 2);
@@ -252,7 +252,7 @@ class DrawingCanvas {
         break;
         
       case 'eraser':
-        // Silici modu - kompozisyon modu 'destination-out' kullan
+        // Eraser mode - use 'destination-out' composition mode
         this.ctx.beginPath();
         this.ctx.globalCompositeOperation = 'destination-out';
         this.ctx.arc(this.lastX, this.lastY, this.brushSize / 2, 0, Math.PI * 2);
@@ -263,12 +263,12 @@ class DrawingCanvas {
       case 'line':
       case 'rect':
       case 'circle':
-        // Geçici çizimi sıfırla
+        // Clear temporary drawing
         this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
         break;
     }
     
-    // Çizim başladı olayı
+    // Drawing start event
     if (typeof this.onDrawStart === 'function') {
       this.onDrawStart({
         x: this.lastX,
@@ -280,7 +280,7 @@ class DrawingCanvas {
     }
   }
   
-  // Çizim yap
+  // Draw
   draw(e) {
     if (!this.isDrawing) return;
     
@@ -313,10 +313,10 @@ class DrawingCanvas {
         break;
         
       case 'line':
-        // Geçici çizimi temizle
+        // Clear temporary drawing
         this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
         
-        // Yeni çizgiyi çiz
+        // Draw new line
         this.tempCtx.beginPath();
         this.tempCtx.moveTo(this.startX, this.startY);
         this.tempCtx.lineTo(x, y);
@@ -328,10 +328,10 @@ class DrawingCanvas {
         break;
         
       case 'rect':
-        // Geçici çizimi temizle
+        // Clear temporary drawing
         this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
         
-        // Yeni dikdörtgeni çiz
+        // Draw new rectangle
         const width = x - this.startX;
         const height = y - this.startY;
         
@@ -343,10 +343,10 @@ class DrawingCanvas {
         break;
         
       case 'circle':
-        // Geçici çizimi temizle
+        // Clear temporary drawing
         this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
         
-        // Yeni daireyi çiz
+        // Draw new circle
         const radiusX = Math.abs(x - this.startX);
         const radiusY = Math.abs(y - this.startY);
         const radius = Math.max(radiusX, radiusY);
@@ -359,15 +359,15 @@ class DrawingCanvas {
         break;
     }
     
-    // Canlı çizim durumunu anlık olarak kaydet
+    // Save live drawing state immediately
     if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
-      // Her 10 çizim işleminde bir, ara durumu kaydet (çok sık olmaması için)
+      // Save state every 10 drawing steps (to avoid saving too frequently)
       if (Math.random() < 0.1) {
         this.saveCurrentState();
       }
     }
     
-    // Mouse hareket olayı
+    // Mouse move event
     if (typeof this.onDrawMove === 'function') {
       this.onDrawMove({
         x0: this.lastX,
@@ -386,20 +386,20 @@ class DrawingCanvas {
     this.lastY = y;
   }
   
-  // Çizimi durdur
+  // Stop drawing
   stopDrawing() {
     if (this.isDrawing) {
       switch (this.currentTool) {
         case 'line':
         case 'rect':
         case 'circle':
-          // Geçici çizimi ana canvas'a aktar
+          // Transfer temporary drawing to main canvas
           this.ctx.drawImage(this.tempCanvas, 0, 0);
           this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
           break;
       }
       
-      // Çizim bittiğinde mevcut durumu kaydet
+      // Save current state after drawing ends
       this.saveCurrentState();
       
       if (typeof this.onDrawEnd === 'function') {
@@ -409,7 +409,7 @@ class DrawingCanvas {
     this.isDrawing = false;
   }
   
-  // Uzak kullanıcıdan gelen çizimi başlat
+  // Start drawing from remote user
   remoteDrawStart(data) {
     switch (data.tool || 'brush') {
       case 'brush':
@@ -429,7 +429,7 @@ class DrawingCanvas {
     }
   }
   
-  // Uzak kullanıcıdan gelen çizimi devam ettir
+  // Continue drawing from remote user
   remoteDrawMove(data) {
     switch (data.tool || 'brush') {
       case 'brush':
@@ -492,31 +492,31 @@ class DrawingCanvas {
     }
   }
   
-  // Uzak kullanıcıdan gelen çizim bittiğinde
+  // Drawing ended from remote user
   remoteDrawEnd(data) {
     if (data && (data.tool === 'line' || data.tool === 'rect' || data.tool === 'circle')) {
-      // Geçici çizimi ana canvas'a aktar
+      // Transfer temporary drawing to main canvas
       this.ctx.drawImage(this.tempCanvas, 0, 0);
       this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
     }
     
-    // Uzak kullanıcı çizimi bittiğinde durumu kaydet
+    // Save current state after remote drawing ends
     this.saveCurrentState();
   }
   
-  // Tahtayı temizle
+  // Clear canvas
   clearCanvas(notifyOthers = true) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
     this.saveCurrentState();
     
-    // Temizleme işlemini bildir ama sadece istenirse diğerlerine bildir
+    // Notify clear operation but only if requested
     if (notifyOthers && typeof this.onClearCanvas === 'function') {
       this.onClearCanvas();
     }
   }
   
-  // Resmi kaydet
+  // Save image
   saveAsImage() {
     const link = document.createElement('a');
     link.download = 'drawvibe-' + new Date().toISOString().slice(0, 10) + '.png';
@@ -524,17 +524,17 @@ class DrawingCanvas {
     link.click();
   }
   
-  // Fırça boyutunu ayarla
+  // Set brush size
   setBrushSize(size) {
     this.brushSize = size;
   }
   
-  // Fırça rengini ayarla
+  // Set brush color
   setBrushColor(color) {
     this.brushColor = color;
   }
   
-  // Görüntü verisini doğrudan ayarla
+  // Set image data directly
   setImageData(imageData) {
     if (!imageData) return;
     
@@ -545,7 +545,7 @@ class DrawingCanvas {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(tempImage, 0, 0);
       
-      // Geçmiş durumunu kaydet
+      // Save current state
       this.currentStep++;
       if (this.currentStep >= this.history.length) {
         this.history.push(imageData);
@@ -558,7 +558,7 @@ class DrawingCanvas {
         this.currentStep--;
       }
       
-      // Geçmiş düğmelerini güncelle
+      // Update history buttons
       if (typeof this.onHistoryChange === 'function') {
         this.onHistoryChange({
           canUndo: this.canUndo(),
@@ -571,5 +571,5 @@ class DrawingCanvas {
   }
 }
 
-// Dışa aktar
+// Export
 window.DrawingCanvas = DrawingCanvas; 

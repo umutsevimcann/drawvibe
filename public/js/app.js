@@ -1,15 +1,15 @@
 /**
- * Drawvibe ana uygulama, socket.io bağlantıları ve kullanıcı arayüzü işlemleri
+ * Drawvibe main application, socket.io connections and user interface operations
  */
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM elementleri - Hoş geldin ekranı
+  // DOM elements - Welcome screen
   const welcomeScreen = document.getElementById('welcome-screen');
   const drawingApp = document.getElementById('drawing-app');
   const welcomeUsername = document.getElementById('welcome-username');
   const roomIdInput = document.getElementById('room-id');
   const joinButton = document.getElementById('join-button');
   
-  // DOM elementleri - Çizim uygulaması
+  // DOM elements - Drawing application
   const currentRoomIdElement = document.getElementById('current-room-id');
   const copyRoomButton = document.getElementById('copy-room-button');
   const currentUsernameElement = document.getElementById('current-username');
@@ -27,40 +27,40 @@ document.addEventListener('DOMContentLoaded', () => {
   const colorPresets = document.querySelectorAll('.color-preset');
   const cursorsLayer = document.getElementById('cursors-layer');
   
-  // İşlem geçmişi elementi
+  // Activity history element
   let activityLogContainer = document.createElement('div');
   activityLogContainer.className = 'activity-log-container';
-  activityLogContainer.innerHTML = '<h3><i class="fas fa-history"></i> İşlem Geçmişi</h3><ul id="activity-log"></ul>';
+  activityLogContainer.innerHTML = '<h3><i class="fas fa-history"></i> Activity History</h3><ul id="activity-log"></ul>';
   document.querySelector('.canvas-container').appendChild(activityLogContainer);
   const activityLog = document.getElementById('activity-log');
   
-  // Çizim araç butonları
+  // Drawing tool buttons
   const toolButtons = document.querySelectorAll('.tool-select');
   
-  // Uygulama durumu
+  // Application state
   let currentUser = null;
   let currentRoom = null;
   let currentTool = 'brush';
   
-  // Rastgele kullanıcı adı oluştur
-  welcomeUsername.value = 'Misafir' + Math.floor(Math.random() * 1000);
+  // Generate random username
+  welcomeUsername.value = 'Guest' + Math.floor(Math.random() * 1000);
   
-  // Socket.io bağlantısı
+  // Socket.io connection
   const socket = io();
   
-  // Canvas sınıfını başlat
+  // Initialize Canvas class
   const drawingCanvas = new DrawingCanvas();
   
-  // Araç isimlerini Türkçe karşılıkları
+  // Tool names in English
   const toolNames = {
-    'brush': 'Kalem',
-    'eraser': 'Silgi',
-    'line': 'Çizgi',
-    'rect': 'Dikdörtgen',
-    'circle': 'Daire'
+    'brush': 'Pen',
+    'eraser': 'Eraser',
+    'line': 'Line',
+    'rect': 'Rectangle',
+    'circle': 'Circle'
   };
   
-  // İşlem günlüğüne mesaj ekle
+  // Add message to activity log
   function addActivityLog(message, userName = null, color = null, action = null) {
     const li = document.createElement('li');
     
@@ -94,18 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     activityLog.appendChild(li);
     
-    // Sınırlı sayıda öğe tut
+    // Keep limited number of items
     if (activityLog.children.length > 30) {
       activityLog.removeChild(activityLog.children[0]);
     }
     
-    // Otomatik kaydır
+    // Auto scroll
     activityLogContainer.scrollTop = activityLogContainer.scrollHeight;
   }
   
-  // Araç seçme işlevi
+  // Tool selection function
   function selectTool(toolName) {
-    // Önceki aktif aracı kaldır
+    // Remove previous active tool
     toolButtons.forEach(btn => {
       btn.classList.remove('active');
       if (btn.getAttribute('data-tool') === toolName) {
@@ -113,26 +113,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     
-    // Canvas aracını ayarla
+    // Set canvas tool
     drawingCanvas.setTool(toolName);
     currentTool = toolName;
     
-    // Araç adını göster
+    // Show tool name
     currentToolNameElement.textContent = toolNames[toolName] || toolName;
     
-    // İşlem günlüğüne ekle
+    // Add to activity log
     if (currentUser) {
-      // Araç değiştirme olayını bildir
+      // Notify tool change event
       socket.emit('userActivity', {
         type: 'toolChange',
         tool: toolName
       });
       
-      addActivityLog(`${toolNames[toolName]} aracını seçti`, currentUser.username, currentUser.color);
+      addActivityLog(`selected the ${toolNames[toolName]} tool`, currentUser.username, currentUser.color);
     }
   }
   
-  // Araç seçim butonlarına tıklama
+  // Tool selection button clicks
   toolButtons.forEach(button => {
     button.addEventListener('click', () => {
       const tool = button.getAttribute('data-tool');
@@ -140,16 +140,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // Varsayılan aracı seç
+  // Select default tool
   selectTool('brush');
   
-  // Geçmiş kontrolleri event listener
+  // History controls event listener
   drawingCanvas.onHistoryChange = ({ canUndo, canRedo }) => {
     undoButton.disabled = !canUndo;
     redoButton.disabled = !canRedo;
   };
   
-  // Canvas güncellendiğinde 
+  // When canvas is updated
   drawingCanvas.onCanvasUpdated = (data) => {
     if (data.type === 'historyChange') {
       socket.emit('canvasUpdate', {
@@ -165,20 +165,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   
-  // Tahtayı temizleme olayı
+  // Clear canvas event
   drawingCanvas.onClearCanvas = () => {
-    // Sadece kendi tahtamızın temizlendiğini bildir
+    // Only notify that our own canvas was cleared
     socket.emit('userActivity', {
       type: 'clearCanvas'
     });
   };
   
-  // Geri alma/yeniden yapma düğmelerini etkinleştir
+  // Enable undo/redo buttons
   undoButton.addEventListener('click', () => {
     if (drawingCanvas.undo()) {
-      showNotification('Son adım geri alındı', 'undo');
+      showNotification('Last step undone', 'undo');
       
-      // İşlem günlüğüne ekle
+      // Add to activity log
       if (currentUser) {
         socket.emit('userActivity', {
           type: 'undo'
@@ -189,9 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   redoButton.addEventListener('click', () => {
     if (drawingCanvas.redo()) {
-      showNotification('Adım yeniden yapıldı', 'redo');
+      showNotification('Step redone', 'redo');
       
-      // İşlem günlüğüne ekle
+      // Add to activity log
       if (currentUser) {
         socket.emit('userActivity', {
           type: 'redo'
@@ -200,19 +200,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // URL'den oda kodu al (paylaşım linklerini desteklemek için)
+  // Get room ID from URL (to support sharing links)
   function getRoomIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('room');
   }
   
-  // Sayfa yüklendiğinde URL'den oda kodu varsa ekle
+  // Add room code from URL if available when page loads
   const urlRoomId = getRoomIdFromUrl();
   if (urlRoomId) {
     roomIdInput.value = urlRoomId;
   }
   
-  // Bildirim göster
+  // Show notification
   function showNotification(message, icon = 'info-circle') {
     const notification = document.createElement('div');
     notification.className = 'notification';
@@ -231,9 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   }
   
-  // Paylaşım modalı oluştur
+  // Create share modal
   function createShareModal() {
-    // Modal zaten varsa sil
+    // Delete existing modal if exists
     const existingModal = document.querySelector('.modal');
     if (existingModal) {
       existingModal.remove();
@@ -246,25 +246,25 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.innerHTML = `
       <div class="modal-content">
         <div class="modal-header">
-          <div class="modal-title"><i class="fas fa-share-alt"></i> Çizim Odasını Paylaş</div>
+          <div class="modal-title"><i class="fas fa-share-alt"></i> Share Drawing Room</div>
           <button class="modal-close">&times;</button>
         </div>
-        <p>Bu bağlantıyı paylaşarak arkadaşlarını çizim odana davet et:</p>
+        <p>Share this link to invite friends to your drawing room:</p>
         <div class="share-link">
           <input type="text" class="share-input" value="${shareUrl}" readonly>
           <button class="copy-link-btn"><i class="fas fa-copy"></i></button>
         </div>
         <div class="social-share">
-          <a href="https://wa.me/?text=${encodeURIComponent(`Drawvibe çizim odama katıl: ${shareUrl}`)}" 
-             target="_blank" class="social-btn whatsapp" title="WhatsApp ile paylaş">
+          <a href="https://wa.me/?text=${encodeURIComponent(`Join my Drawvibe drawing room: ${shareUrl}`)}" 
+             target="_blank" class="social-btn whatsapp" title="Share on WhatsApp">
             <i class="fab fa-whatsapp"></i>
           </a>
-          <a href="https://telegram.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Drawvibe çizim odama katıl')}" 
-             target="_blank" class="social-btn telegram" title="Telegram ile paylaş">
+          <a href="https://telegram.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Join my Drawvibe drawing room')}" 
+             target="_blank" class="social-btn telegram" title="Share on Telegram">
             <i class="fab fa-telegram-plane"></i>
           </a>
-          <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`Drawvibe çizim odama katıl: ${shareUrl}`)}" 
-             target="_blank" class="social-btn twitter" title="Twitter ile paylaş">
+          <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`Join my Drawvibe drawing room: ${shareUrl}`)}" 
+             target="_blank" class="social-btn twitter" title="Share on Twitter">
             <i class="fab fa-twitter"></i>
           </a>
         </div>
@@ -273,12 +273,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.body.appendChild(modal);
     
-    // Modalı göster
+    // Show modal
     setTimeout(() => {
       modal.classList.add('show');
     }, 10);
     
-    // Kapatma butonu
+    // Close button
     const closeButton = modal.querySelector('.modal-close');
     closeButton.addEventListener('click', () => {
       modal.classList.remove('show');
@@ -287,17 +287,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 300);
     });
     
-    // Kopyalama butonu
+    // Copy button
     const copyButton = modal.querySelector('.copy-link-btn');
     const shareInput = modal.querySelector('.share-input');
     
     copyButton.addEventListener('click', () => {
       shareInput.select();
       document.execCommand('copy');
-      showNotification('Bağlantı kopyalandı!', 'check');
+      showNotification('Link copied!', 'check');
     });
     
-    // Modalın dışına tıklayarak kapat
+    // Close by clicking outside
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.classList.remove('show');
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Oda kodunu kopyala
+  // Copy room code
   copyRoomButton.addEventListener('click', () => {
     const tempInput = document.createElement('input');
     tempInput.value = currentRoom;
@@ -317,101 +317,101 @@ document.addEventListener('DOMContentLoaded', () => {
     document.execCommand('copy');
     document.body.removeChild(tempInput);
     
-    showNotification('Oda kodu kopyalandı!', 'check');
+    showNotification('Room code copied!', 'check');
   });
   
-  // Paylaş butonuna tıklandığında
+  // When share button is clicked
   shareButton.addEventListener('click', () => {
     createShareModal();
   });
   
-  // Hoş geldin ekranında katıl butonuna tıklanma
+  // Welcome screen join button click
   joinButton.addEventListener('click', () => {
     const username = welcomeUsername.value.trim() || welcomeUsername.placeholder;
-    const roomId = roomIdInput.value.trim(); // Boşsa rastgele oda oluşturulacak
+    const roomId = roomIdInput.value.trim(); // Random room will be created if empty
     
-    // Odaya katıl
+    // Join room
     socket.emit('joinRoom', { username, roomId });
   });
   
-  // Kullanıcı odaya katıldığında
+  // When user joins room
   socket.on('roomJoined', ({ roomId, user }) => {
-    // Durum bilgilerini güncelle
+    // Update state info
     currentUser = user;
     currentRoom = roomId;
     
-    // Oda kodunu göster
+    // Show room code
     currentRoomIdElement.textContent = roomId;
     
-    // Kullanıcı adını göster
+    // Show username
     currentUsernameElement.textContent = user.username;
     
-    // Tarayıcı geçmişini güncelle (oda kodu ile)
+    // Update browser history (with room code)
     const url = new URL(window.location);
     url.searchParams.set('room', roomId);
     window.history.pushState({}, '', url);
     
-    // Ekranları değiştir
+    // Switch screens
     welcomeScreen.classList.add('hidden');
     drawingApp.classList.remove('hidden');
     
-    // Pencere boyutuna göre canvas'ı ayarla
+    // Adjust canvas to window size
     drawingCanvas.resizeCanvas();
     
-    showNotification('Çizim odasına bağlandın!', 'paint-brush');
+    showNotification('Connected to drawing room!', 'paint-brush');
     
-    // İşlem günlüğüne ekle
-    addActivityLog('odaya katıldı', user.username, user.color);
+    // Add to activity log
+    addActivityLog('joined the room', user.username, user.color);
   });
   
-  // Kullanıcı aktivite olayları
+  // User activity events
   socket.on('userActivity', (data) => {
     if (!data.user) return;
     
     switch (data.type) {
       case 'join':
-        addActivityLog('odaya katıldı', data.user.username, data.user.color);
+        addActivityLog('joined the room', data.user.username, data.user.color);
         break;
         
       case 'leave':
-        addActivityLog('odadan ayrıldı', data.user.username, data.user.color);
+        addActivityLog('left the room', data.user.username, data.user.color);
         break;
         
       case 'toolChange':
-        addActivityLog(`${toolNames[data.tool]} aracını seçti`, data.user.username, data.user.color);
+        addActivityLog(`selected the ${toolNames[data.tool]} tool`, data.user.username, data.user.color);
         break;
         
       case 'undo':
-        addActivityLog('son adımını geri aldı', data.user.username, data.user.color);
+        addActivityLog('last step undone', data.user.username, data.user.color);
         break;
         
       case 'redo':
-        addActivityLog('geri aldığı adımı yeniden yaptı', data.user.username, data.user.color);
+        addActivityLog('step redone', data.user.username, data.user.color);
         break;
         
       case 'clearCanvas':
-        addActivityLog('kendi tahtasını temizledi', data.user.username, data.user.color);
+        addActivityLog('cleared their canvas', data.user.username, data.user.color);
         break;
         
       case 'drawStart':
-        // Uzaktaki kullanıcı çizim yapmaya başladığında
+        // When remote user starts drawing
         if (!document.querySelector(`#activity-log li[data-action="drawing-remote-${data.user.id}"]`)) {
-          addActivityLog(`${toolNames[data.tool]} ile çiziyor`, data.user.username, data.user.color, `drawing-remote-${data.user.id}`);
+          addActivityLog(`${toolNames[data.tool]} is drawing`, data.user.username, data.user.color, `drawing-remote-${data.user.id}`);
         }
         break;
         
       case 'drawEnd':
-        // Uzaktaki kullanıcı çizimi bitirdiğinde
+        // When remote user finishes drawing
         const drawingItem = document.querySelector(`#activity-log li[data-action="drawing-remote-${data.user.id}"]`);
         if (drawingItem) {
           drawingItem.remove();
         }
-        addActivityLog(`${toolNames[data.tool]} ile çizimi tamamladı`, data.user.username, data.user.color);
+        addActivityLog(`${toolNames[data.tool]} finished drawing`, data.user.username, data.user.color);
         break;
     }
   });
   
-  // Mouse takip etme
+  // Mouse tracking
   drawingApp.addEventListener('mousemove', (e) => {
     if (!currentRoom) return;
     
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // Kullanıcı arayüzü olayları
+  // User interface events
   colorPicker.addEventListener('input', () => {
     drawingCanvas.setBrushColor(colorPicker.value);
   });
@@ -435,17 +435,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   clearButton.addEventListener('click', () => {
-    // Sadece kendi canvas'ını temizle, diğerlerine temizleme emri gönderme
+    // Only clear your own canvas, don't send clear command to others
     drawingCanvas.clearCanvas(true);
-    showNotification('Kendi tahtanız temizlendi!', 'eraser');
+    showNotification('Your canvas cleared!', 'eraser');
   });
   
   saveButton.addEventListener('click', () => {
     drawingCanvas.saveAsImage();
-    showNotification('Çizim kaydedildi!', 'download');
+    showNotification('Drawing saved!', 'download');
   });
   
-  // Renk presetleri
+  // Color presets
   colorPresets.forEach(preset => {
     preset.addEventListener('click', () => {
       const color = preset.getAttribute('data-color');
@@ -454,12 +454,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // Aktif kullanıcı sayısı
+  // Active user count
   socket.on('userCount', (count) => {
     userCountElement.textContent = count;
   });
   
-  // Aktif kullanıcılar listesi
+  // Active users list
   socket.on('activeUsers', (users) => {
     activeUsersList.innerHTML = '';
     
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
       li.appendChild(colorDot);
       li.appendChild(document.createTextNode(user.username));
       
-      // Mevcut kullanıcı ise işaretle
+      // Mark if current user
       if (currentUser && user.id === currentUser.id) {
         li.style.fontWeight = 'bold';
       }
@@ -481,10 +481,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // Diğer kullanıcıların mouse imleci
+  // Other users' mouse cursors
   socket.on('mouseMove', (data) => {
     if (!data.user) return;
-    if (currentUser && data.user.id === currentUser.id) return; // Kendi imlecimizi gösterme
+    if (currentUser && data.user.id === currentUser.id) return; // Don't show our own cursor
     
     let cursor = document.getElementById(`cursor-${data.user.id}`);
     
@@ -495,15 +495,15 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const label = document.createElement('div');
       label.className = 'cursor-label';
-      label.textContent = `${data.user.username} (${toolNames[data.tool] || data.tool || 'Kalem'})`;
+      label.textContent = `${data.user.username} (${toolNames[data.tool] || data.tool || 'Pen'})`;
       
       cursor.appendChild(label);
       cursorsLayer.appendChild(cursor);
     } else {
-      // Araç bilgisini güncelle
+      // Update tool info
       const label = cursor.querySelector('.cursor-label');
       if (label) {
-        label.textContent = `${data.user.username} (${toolNames[data.tool] || data.tool || 'Kalem'})`;
+        label.textContent = `${data.user.username} (${toolNames[data.tool] || data.tool || 'Pen'})`;
       }
     }
     
@@ -512,13 +512,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cursor.style.backgroundColor = data.user.color;
   });
   
-  // Çizim olaylarını socket.io üzerinden ilet
+  // Send drawing events via socket.io
   drawingCanvas.onDrawStart = (data) => {
     if (!currentRoom) return;
     
-    // Çizim başladığında araç tipini günlüğe ekle
+    // Add tool type to log when drawing starts
     if (!document.querySelector(`#activity-log li[data-action="drawing-${currentTool}"]`)) {
-      addActivityLog(`${toolNames[currentTool]} ile çiziyor`, currentUser.username, currentUser.color, `drawing-${currentTool}`);
+      addActivityLog(`${toolNames[currentTool]} is drawing`, currentUser.username, currentUser.color, `drawing-${currentTool}`);
     }
     
     socket.emit('drawStart', data);
@@ -527,21 +527,21 @@ document.addEventListener('DOMContentLoaded', () => {
   drawingCanvas.onDrawMove = (data) => {
     if (!currentRoom) return;
     
-    // Uzak kullanıcılara çizimi ilet
+    // Send drawing to remote users
     socket.emit('drawMove', data);
   };
   
   drawingCanvas.onDrawEnd = () => {
     if (!currentRoom) return;
     
-    // Çizim bittiğinde mesajı kaldır
+    // Remove message when drawing ends
     const drawingItem = document.querySelector(`#activity-log li[data-action="drawing-${currentTool}"]`);
     if (drawingItem) {
       drawingItem.remove();
     }
     
-    // Çizimi bitirdiğini bildir
-    addActivityLog(`${toolNames[currentTool]} ile çizimi tamamladı`, currentUser.username, currentUser.color);
+    // Notify drawing ended
+    addActivityLog(`${toolNames[currentTool]} finished drawing`, currentUser.username, currentUser.color);
     
     socket.emit('drawEnd', { tool: currentTool });
     socket.emit('userActivity', {
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
   
-  // Uzaktan gelen çizim olayları
+  // Remote drawing events
   socket.on('drawStart', (data) => {
     drawingCanvas.remoteDrawStart(data);
   });
@@ -563,41 +563,41 @@ document.addEventListener('DOMContentLoaded', () => {
     drawingCanvas.remoteDrawEnd(data);
   });
   
-  // Canvas güncelleme olayını dinle
+  // Listen for canvas update event
   socket.on('canvasUpdate', (data) => {
     if (data.type === 'historyChange') {
       if (data.user && currentUser && data.user.id !== currentUser.id) {
-        // Başka birinin geri alma/ileri alma işlemini günlüğe ekle
-        const action = data.action === 'undo' ? 'son adımını geri aldı' : 'geri aldığı adımı yeniden yaptı';
+        // Log someone else's undo/redo operation
+        const action = data.action === 'undo' ? 'last step undone' : 'step redone';
         addActivityLog(action, data.user.username, data.user.color);
       }
       
       drawingCanvas.setImageData(data.imageData);
     } else if (data.type === 'stateChange') {
-      // Normal canvas değişiklikleri
+      // Normal canvas changes
       drawingCanvas.setImageData(data.imageData);
     }
   });
   
   socket.on('clearBoard', () => {
-    drawingCanvas.clearCanvas(false); // Sadece kendi panelimizi temizliyoruz
-    showNotification('Tahtanız temizlendi', 'eraser');
+    drawingCanvas.clearCanvas(false); // Just clear our panel
+    showNotification('Your canvas has been cleared', 'eraser');
   });
   
-  // Pencere boyutu değiştiğinde
+  // Window resize
   window.addEventListener('resize', () => {
     drawingCanvas.resizeCanvas();
   });
   
-  // Klavye kısayolları
+  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    // 1-5 tuşları: araç değiştirme
+    // Keys 1-5: tool switching
     if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const toolIndex = parseInt(e.key) - 1;
       const tools = ['brush', 'eraser', 'line', 'rect', 'circle'];
       if (toolIndex >= 0 && toolIndex < tools.length) {
         selectTool(tools[toolIndex]);
-        showNotification(`${toolNames[tools[toolIndex]]} aracı seçildi`, 'hand-pointer');
+        showNotification(`${toolNames[tools[toolIndex]]} tool selected`, 'hand-pointer');
       }
     }
   });

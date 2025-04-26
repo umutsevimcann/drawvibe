@@ -3,27 +3,27 @@ const http = require('http');
 const socketIO = require('socket.io');
 const path = require('path');
 
-// Socket yöneticisi modülünü import et
+// Import socket manager module
 const setupSockets = require('./sockets/socketManager');
 
-// Express uygulamasını başlat
+// Start Express application
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// Statik dosyalar için klasör belirt
+// Specify folder for static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ana sayfa route'u
+// Main page route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
-// Socket.io bağlantılarını yönet
+// Manage Socket.io connections
 setupSockets(io);
 
-// Sunucuyu belirtilen portta başlat
+// Start server on specified port
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Drawvibe sunucusu ${PORT} numaralı portta çalışıyor!`);
+  console.log(`Drawvibe server is running on port ${PORT}!`);
 }); 

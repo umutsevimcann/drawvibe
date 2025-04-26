@@ -1,36 +1,36 @@
 /**
- * Socket.io bağlantılarını ve çizim olaylarını yöneten modül
+ * Module that manages Socket.io connections and drawing events
  */
 
 const { generateRoomId, generateUserColor } = require('../utils/helpers');
 
-// Kullanıcı odaları
+// User rooms
 const rooms = new Map();
 
-// Socket bağlantı yöneticisi
+// Socket connection manager
 function setupSocketManager(io) {
   io.on('connection', (socket) => {
-    console.log(`Kullanıcı bağlandı: ${socket.id}`);
+    console.log(`User connected: ${socket.id}`);
     let currentUser = null;
     let currentRoom = null;
     
-    // Odaya katılma
+    // Join room
     socket.on('joinRoom', ({ username, roomId }) => {
-      // Kullanıcı adını kontrol et
+      // Check username
       if (!username || username.trim() === '') {
-        username = 'Misafir' + Math.floor(Math.random() * 1000);
+        username = 'Guest' + Math.floor(Math.random() * 1000);
       }
       
-      // Oda ID'si yoksa rastgele oluştur
+      // Generate random room ID if none provided
       const finalRoomId = roomId || generateRoomId();
       
-      // Eski odadan çık (eğer varsa)
+      // Leave old room (if exists)
       if (currentRoom) {
         socket.leave(currentRoom);
         removeUserFromRoom(socket.id, currentRoom);
       }
       
-      // Yeni oda oluştur (yoksa)
+      // Create new room (if doesn't exist)
       if (!rooms.has(finalRoomId)) {
         rooms.set(finalRoomId, {
           users: [],
@@ -38,22 +38,22 @@ function setupSocketManager(io) {
         });
       }
       
-      // Kullanıcı bilgisini oluştur
+      // Create user information
       currentUser = {
         id: socket.id,
         username,
         color: generateUserColor()
       };
       
-      // Kullanıcıyı odaya ekle
+      // Add user to room
       currentRoom = finalRoomId;
       socket.join(currentRoom);
       
-      // Odanın kullanıcı listesine ekle
+      // Add to room's user list
       const roomData = rooms.get(currentRoom);
       roomData.users.push(currentUser);
       
-      // Kullanıcıya mevcut canvas durumunu gönder
+      // Send current canvas state to user
       socket.emit('roomJoined', { roomId: currentRoom, user: currentUser });
       
       if (roomData.canvasState) {
@@ -63,35 +63,35 @@ function setupSocketManager(io) {
         });
       }
       
-      // Oda kullanıcı sayısını güncelle
+      // Update room user count
       updateRoomUserCount(currentRoom);
       updateActiveUsers(currentRoom);
       
-      // Diğer kullanıcılara katılma bildirimi yap
+      // Notify other users about new join
       socket.to(currentRoom).emit('userActivity', {
         type: 'join',
         user: currentUser
       });
       
-      console.log(`${username} odaya katıldı: ${currentRoom}`);
+      console.log(`${username} joined room: ${currentRoom}`);
     });
     
-    // Kullanıcı devre dışı kalırsa odadan çıkar
+    // Remove user from room when disconnected
     socket.on('disconnect', () => {
-      console.log(`Kullanıcı ayrıldı: ${socket.id}`);
+      console.log(`User left: ${socket.id}`);
       if (currentRoom) {
-        // Odadan ayrılma bildirimini gönder
+        // Send leave notification
         socket.to(currentRoom).emit('userActivity', {
           type: 'leave',
           user: currentUser
         });
         
-        // Kullanıcıyı odadan çıkar
+        // Remove user from room
         removeUserFromRoom(socket.id, currentRoom);
       }
     });
     
-    // Fare hareketi iletme
+    // Mouse movement transmission
     socket.on('mouseMove', (data) => {
       if (!currentRoom || !currentUser) return;
       
@@ -103,11 +103,11 @@ function setupSocketManager(io) {
       });
     });
     
-    // Çizim olayları
+    // Drawing events
     socket.on('drawStart', (data) => {
       if (!currentRoom) return;
       
-      // Çizime başlama olayını bildir
+      // Notify drawing start event
       socket.to(currentRoom).emit('userActivity', {
         type: 'drawStart',
         tool: data.tool,
@@ -143,54 +143,54 @@ function setupSocketManager(io) {
       });
     });
     
-    // Canvas durumu güncelleme
+    // Canvas state update
     socket.on('canvasUpdate', (data) => {
       if (!currentRoom) return;
       
-      // Canvas durumunu odada sakla
+      // Store canvas state in room
       const roomData = rooms.get(currentRoom);
       if (roomData) {
         roomData.canvasState = data.imageData;
       }
       
-      // Diğer kullanıcılara gönder (kullanıcı bilgisi ile)
+      // Send to other users (with user info)
       socket.to(currentRoom).emit('canvasUpdate', {
         ...data,
         user: currentUser
       });
     });
     
-    // Kullanıcı aktivite olayları
+    // User activity events
     socket.on('userActivity', (data) => {
       if (!currentRoom || !currentUser) return;
       
-      // Aktiviteyi diğer kullanıcılara bildir
+      // Notify activity to other users
       socket.to(currentRoom).emit('userActivity', {
         ...data,
         user: currentUser
       });
     });
     
-    // Tahtayı temizleme - artık kullanılmıyor
+    // Clear board - no longer used
     socket.on('clearBoard', () => {
       if (!currentRoom) return;
       
-      // Odanın canvas durumunu temizleme yetkisi işlem günlüğüne taşındı
+      // Canvas clearing permission moved to action log
       // socket.to(currentRoom).emit('clearBoard');
     });
   });
   
-  // Odadan kullanıcı çıkarma
+  // Remove user from room
   function removeUserFromRoom(userId, roomId) {
     if (!rooms.has(roomId)) return;
     
     const roomData = rooms.get(roomId);
     roomData.users = roomData.users.filter(user => user.id !== userId);
     
-    // Odada hiç kullanıcı kalmadıysa odayı sil
+    // Delete room if no users left
     if (roomData.users.length === 0) {
       rooms.delete(roomId);
-      console.log(`Oda silindi: ${roomId}`);
+      console.log(`Room deleted: ${roomId}`);
       return;
     }
     
@@ -198,7 +198,7 @@ function setupSocketManager(io) {
     updateActiveUsers(roomId);
   }
   
-  // Oda kullanıcı sayısını güncelle
+  // Update room user count
   function updateRoomUserCount(roomId) {
     if (!rooms.has(roomId)) return;
     
@@ -206,7 +206,7 @@ function setupSocketManager(io) {
     io.to(roomId).emit('userCount', roomData.users.length);
   }
   
-  // Aktif kullanıcı listesini güncelle
+  // Update active user list
   function updateActiveUsers(roomId) {
     if (!rooms.has(roomId)) return;
     

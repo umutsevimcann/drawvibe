@@ -1,57 +1,57 @@
-## 🌐 Canlı Demo
+## 🌐 Live Demo
 
-Drawvibe uygulamasını hemen deneyin: [Buraya Tıklayın](https://drawvibe-production.up.railway.app)
+Try Drawvibe app now: [Click Here](https://drawvibe-production.up.railway.app)
 
 
 # 🎨 Drawvibe
 
-Drawvibe, insanların yaratıcılıklarını paylaşabilecekleri, gerçek zamanlı olarak birlikte çizim yapabilecekleri bir platformdur. Kullanıcılar yalnızca bir tarayıcıyla giriş yaparak, hiçbir ek yazılıma gerek kalmadan ortak bir tahtada çizim yapabilirler.
+Drawvibe is a platform where people can share their creativity and draw together in real-time. Users can start drawing on a shared canvas with just a browser, without needing any additional software.
 
-## 🚀 Özellikler
+## 🚀 Features
 
-- **Gerçek Zamanlı Çizim**: Her kullanıcının yaptığı çizimler anında diğer kullanıcılara iletilir
-- **Kullanıcı İmleçleri**: Herkesin mouse imleci gerçek zamanlı olarak gösterilir
-- **Fırça Ayarları**: Farklı renk ve kalınlıklar seçilebilir
-- **Tahta Temizleme**: Tek tıkla tahtayı sıfırlama
-- **Resim olarak indirme**: Çalışmanızı PNG formatında kaydedin
-- **Mobil uyumlu**: Dokunmatik cihazlarla da kullanılabilir
+- **Real-Time Drawing**: Every user's drawings are instantly transmitted to other users
+- **User Cursors**: Everyone's mouse cursor is shown in real-time
+- **Brush Settings**: Different colors and thicknesses can be selected
+- **Board Clearing**: Reset the board with a single click
+- **Save as Image**: Save your work in PNG format
+- **Mobile Compatible**: Can be used with touch devices
 
-## 🛠️ Kurulum
+## 🛠️ Installation
 
-Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları izleyin:
+Follow these steps to run the project in your local environment:
 
 ```bash
-# Repoyu klonlayın
+# Clone the repository
 git clone https://github.com/umutsevimcann/drawvibe.git
 cd drawvibe
 
-# Bağımlılıkları yükleyin
+# Install dependencies
 npm install
 
-# Uygulamayı başlatın
+# Start the application
 npm start
 ```
 
-Tarayıcınızda `http://localhost:3000` adresine giderek uygulamayı kullanabilirsiniz.
+You can use the application by going to `http://localhost:3000` in your browser.
 
-## 🧰 Teknolojiler
+## 🧰 Technologies
 
-- **Node.js + Express.js**: Web sunucusu
-- **Socket.io**: Gerçek zamanlı veri iletişimi
-- **HTML5 Canvas**: Çizim işlemleri
-- **JavaScript**: İstemci tarafı programlama
-- **CSS**: Arayüz tasarımı
+- **Node.js + Express.js**: Web server
+- **Socket.io**: Real-time data communication
+- **HTML5 Canvas**: Drawing operations
+- **JavaScript**: Client-side programming
+- **CSS**: Interface design
 
-## 📷 Ekran Görüntüleri
+## 📷 Screenshots
 
-![Drawvibe Ekran Görüntüsü 1](screenshots/screenshot1.png)
-![Drawvibe Ekran Görüntüsü 2](screenshots/screenshot2.png)
-![Drawvibe Ekran Görüntüsü 3](screenshots/screenshot3.png)
-![Drawvibe Ekran Görüntüsü 4](screenshots/screenshot4.png)
-![Drawvibe Ekran Görüntüsü 5](screenshots/screenshot5.png)
-![Drawvibe Ekran Görüntüsü 6](screenshots/screenshot6.png)
-![Drawvibe Ekran Görüntüsü 7](screenshots/screenshot7.png)
+![Drawvibe Screenshot 1](screenshots/screenshot1.png)
+![Drawvibe Screenshot 2](screenshots/screenshot2.png)
+![Drawvibe Screenshot 3](screenshots/screenshot3.png)
+![Drawvibe Screenshot 4](screenshots/screenshot4.png)
+![Drawvibe Screenshot 5](screenshots/screenshot5.png)
+![Drawvibe Screenshot 6](screenshots/screenshot6.png)
+![Drawvibe Screenshot 7](screenshots/screenshot7.png)
 
-## 📝 Lisans
+## 📝 License
 
-MIT Lisansı altında yayınlanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın. 
+Published under MIT License. See [LICENSE](LICENSE) file for details. 

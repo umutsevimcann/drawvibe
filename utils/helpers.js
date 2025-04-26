@@ -1,8 +1,8 @@
 /**
- * Yardımcı fonksiyonlar
+ * Helper functions
  */
 
-// Rastgele oda ID'si oluştur
+// Generate random room ID
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let roomId = '';
@@ -12,7 +12,7 @@ function generateRoomId() {
   return roomId;
 }
 
-// Kullanıcı için rastgele renk oluştur
+// Generate random color for user
 function generateUserColor() {
   const letters = '0123456789ABCDEF';
   let color = '#';
